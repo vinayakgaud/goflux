@@ -1,0 +1,71 @@
+version: '3'
+
+tasks:
+  dev:
+    desc: Run GoFlux in development mode
+    cmds:
+      - go run ./cmd/goflux {{.CLI_ARGS}}
+
+  run:
+    desc: Run GoFlux
+    cmds:
+      - go run ./cmd/goflux
+
+  build:
+    desc: Build GoFlux
+    cmds:
+      - go build -o bin/goflux ./cmd/goflux
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./...
+
+  test:unit:
+    desc: Run unit tests, optionally for a package
+    vars:
+      PACKAGE: "{{.CLI_ARGS}}"
+    cmds:
+      - go test -v ./tests/unit/{{if .PACKAGE}}{{.PACKAGE}}/...{{else}}...{{end}}
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  format:
+    desc: Format Go code
+    cmds:
+      - gofmt -w .
+
+  format:check:
+    desc: Check Go formatting
+    cmds:
+      - test -z "$(gofmt -l .)"
+
+  check:
+    desc: Run all quality checks
+    cmds:
+      - task format:check
+      - task vet
+      - task test
+
+  tidy:
+    desc: Tidy Go dependencies
+    cmds:
+      - go mod tidy
+
+  clean:
+    desc: Remove Go build and test caches
+    cmds:
+      - go clean -cache -testcache
+
+  checkpoint:
+    desc: Format, validate, and create a Git commit
+    cmds:
+      - bash ./scripts/checkpoint.sh
+
+  start:
+    desc: Sync main and create a new feature branch
+    cmds:
+      - bash ./scripts/start.sh {{.CLI_ARGS}}

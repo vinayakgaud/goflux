@@ -1,0 +1,9 @@
+pre-commit:
+  commands:
+    format:
+      run: gofmt -w .
+
+pre-push:
+  commands:
+    test:
+      run: go test ./...
