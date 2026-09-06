@@ -1,7 +1,10 @@
 package lifecycle
 
 import (
+	"errors"
 	"testing"
+
+	"github.com/vinayakgaud/goflux/internal/goerror"
 )
 
 func TestStateStoreInitialState(t *testing.T) {
@@ -15,7 +18,7 @@ func TestStateStoreInitialState(t *testing.T) {
 func TestStateStoreTransition(t *testing.T) {
 	storeState := newStateStore()
 
-	if ok := storeState.transition(serverStateRunning); !ok {
+	if err := storeState.transition(serverStateRunning); err != nil {
 		t.Fatal("expected transition to succedd")
 	}
 
@@ -27,7 +30,7 @@ func TestStateStoreTransition(t *testing.T) {
 func TestInvalidStateStoretransition(t *testing.T) {
 	storeState := newStateStore()
 
-	if ok := storeState.transition(serverStateDraining); ok {
+	if err := storeState.transition(serverStateDraining); err == nil {
 		t.Fatal("expected transition to fail")
 	}
 
@@ -87,5 +90,29 @@ func TestStateTransition(t *testing.T) {
 				t.Fatalf("got %v, want %v", got, tt.allowed)
 			}
 		})
+	}
+}
+
+func TestInvalidStateTransitionError(t *testing.T) {
+	storeState := newStateStore()
+
+	err := storeState.transition(serverStateDraining)
+
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	var goErr *goerror.Error
+
+	if !errors.As(err, &goErr) {
+		t.Fatal("expected goerror.Error")
+	}
+
+	if goErr.Code != goerror.CodeInvalidStateTransition {
+		t.Fatalf(
+			"got %v, want %v",
+			goErr.Code,
+			goerror.CodeInvalidStateTransition,
+		)
 	}
 }
