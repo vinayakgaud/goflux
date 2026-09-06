@@ -19,7 +19,7 @@ tasks:
   test:
     desc: Run tests
     cmds:
-      - go test ./...
+      - go test -v ./...
 
   test:unit:
     desc: Run unit tests, optionally for a package
