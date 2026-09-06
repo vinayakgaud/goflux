@@ -1,7 +1,10 @@
 package lifecycle
 
 import (
+	"fmt"
 	"sync/atomic"
+
+	"github.com/vinayakgaud/goflux/internal/goerror"
 )
 
 type ServerState uint8
@@ -27,19 +30,26 @@ func (s *stateStore) current() ServerState {
 	return ServerState(s.value.Load())
 }
 
-func (s *stateStore) transition(toState ServerState) bool {
+func (s *stateStore) transition(toState ServerState) error {
 	for {
 		currentState := ServerState(s.value.Load())
 
 		if !isValidTransition(currentState, toState) {
-			return false
+			return goerror.New(
+				goerror.CodeInvalidStateTransition,
+				fmt.Sprintf(
+					"cannot transition from %v to %v",
+					currentState,
+					toState,
+				),
+			)
 		}
 
 		if s.value.CompareAndSwap(
 			uint32(currentState),
 			uint32(toState),
 		) {
-			return true
+			return nil
 		}
 	}
 }
