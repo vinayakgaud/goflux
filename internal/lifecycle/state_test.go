@@ -2,6 +2,8 @@ package lifecycle
 
 import (
 	"errors"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/vinayakgaud/goflux/internal/goerror"
@@ -114,5 +116,40 @@ func TestInvalidStateTransitionError(t *testing.T) {
 			goErr.Code,
 			goerror.CodeInvalidStateTransition,
 		)
+	}
+}
+
+func TestConcurrentStateTransition(t *testing.T) {
+	storeState := newStateStore()
+
+	if err := storeState.transition(serverStateRunning); err != nil {
+		t.Fatalf("failed to transition to running: %v", err)
+	}
+
+	const goroutineCount = 100
+
+	var wg sync.WaitGroup
+	var successCount atomic.Int32
+
+	wg.Add(goroutineCount)
+
+	for range goroutineCount {
+		go func() {
+			defer wg.Done()
+
+			if err := storeState.transition(serverStateDraining); err == nil {
+				successCount.Add(1)
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	if got := successCount.Load(); got != 1 {
+		t.Fatalf("got %d successful transition, want 1", got)
+	}
+
+	if got := storeState.current(); got != serverStateDraining {
+		t.Fatalf("got %v, want %v", got, serverStateDraining)
 	}
 }
