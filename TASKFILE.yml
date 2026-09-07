@@ -21,6 +21,13 @@ tasks:
     cmds:
       - go test -v ./...
 
+  test:concurrency:
+    desc: Run concurrency test
+    vars:
+      COUNT: '{{default "100" .CLI_ARGS}}'
+    cmds:
+      - go test -v -race -count={{.COUNT}} ./...
+
   test:unit:
     desc: Run unit tests, optionally for a package
     vars:
